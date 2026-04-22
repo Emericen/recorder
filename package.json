@@ -1,0 +1,24 @@
+{
+  "name": "recorder",
+  "version": "0.0.1",
+  "main": "out/main/index.js",
+  "scripts": {
+    "dev": "electron-vite dev",
+    "build": "electron-vite build",
+    "package": "electron-vite build && electron-builder --mac"
+  },
+  "dependencies": {
+    "@electron-toolkit/preload": "^3.0.2",
+    "@electron-toolkit/utils": "^4.0.0",
+    "iohook-macos": "^1.1.0",
+    "archiver": "^7.0.0"
+  },
+  "devDependencies": {
+    "electron": "^35.1.5",
+    "electron-builder": "^26.0.0",
+    "electron-vite": "^4.0.1",
+    "react": "^19.1.1",
+    "react-dom": "^19.1.1",
+    "@vitejs/plugin-react": "^5.0.3"
+  }
+}

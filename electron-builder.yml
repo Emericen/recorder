@@ -1,0 +1,20 @@
+appId: com.openmnk.recorder
+productName: Recorder
+directories:
+  buildResources: build
+  output: dist
+publish:
+  provider: github
+  owner: Emericen
+  repo: recorder
+mac:
+  category: public.app-category.utilities
+  hardenedRuntime: true
+  notarize: true
+  target:
+    - target: dmg
+      arch:
+        - arm64
+        - x64
+dmg:
+  artifactName: "${productName}-${version}-${arch}.dmg"
