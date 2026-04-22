@@ -79,8 +79,35 @@ async function stop() {
   app.quit()
 }
 
+async function checkPermissions() {
+  let hasScreen = false
+  try {
+    const sources = await desktopCapturer.getSources({ types: ["screen"], thumbnailSize: { width: 1, height: 1 } })
+    hasScreen = sources.length > 0 && !sources[0].thumbnail.isEmpty()
+  } catch {}
+
+  let hasAccessibility = false
+  try {
+    const iohookModule = await import("iohook-macos")
+    const iohook = iohookModule.default || iohookModule
+    hasAccessibility = iohook.checkAccessibilityPermissions().hasPermissions
+  } catch {}
+
+  return { hasScreen, hasAccessibility }
+}
+
 app.whenReady().then(async () => {
   if (isSetup) return setup()
+
+  // Check permissions before recording
+  if (process.platform === "darwin") {
+    const { hasScreen, hasAccessibility } = await checkPermissions()
+    if (!hasScreen || !hasAccessibility) {
+      console.log("Missing permissions. Run 'recorder --setup' first.")
+      app.quit()
+      return
+    }
+  }
 
   ipcMain.on("vision", (_event, message) => {
     if (message.type === "sharing-stopped" && recording) stop()
