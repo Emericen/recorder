@@ -44,7 +44,7 @@ npm install
 cat > /usr/local/bin/recorder << 'LAUNCHER'
 #!/bin/bash
 cd "$HOME/.recorder"
-npx electron-vite dev 2>/dev/null
+npx electron-vite dev -- "$@" 2>/dev/null
 LAUNCHER
 chmod +x /usr/local/bin/recorder
 

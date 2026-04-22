@@ -8,14 +8,20 @@ Screen + input recorder for observing knowledge worker workflows. Records coales
 curl -fsSL https://raw.githubusercontent.com/Emericen/recorder/main/install.sh | bash
 ```
 
+## Setup (first time)
+
+```bash
+recorder --setup    # checks permissions, prompts to grant if missing
+```
+
+Grant **Screen Recording** and **Accessibility** when prompted, then run `--setup` again to verify.
+
 ## Usage
 
 ```bash
 recorder        # start recording
 Ctrl+C          # stop — zip appears on Desktop
 ```
-
-On first run, macOS will ask for **Screen Recording** and **Accessibility** permissions. Grant both and restart.
 
 ## Output
 
