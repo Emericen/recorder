@@ -5,20 +5,24 @@
   "scripts": {
     "dev": "electron-vite dev",
     "build": "electron-vite build",
-    "package": "electron-vite build && electron-builder --mac"
+    "package": "electron-vite build && electron-builder --mac --arm64 --x64",
+    "publish": "electron-vite build && electron-builder --mac --arm64 --x64 --publish always"
   },
   "dependencies": {
     "@electron-toolkit/preload": "^3.0.2",
     "@electron-toolkit/utils": "^4.0.0",
-    "iohook-macos": "^1.1.0",
     "archiver": "^7.0.0"
   },
+  "optionalDependencies": {
+    "iohook-macos": "^1.1.0",
+    "@tkomde/iohook": "1.1.7"
+  },
   "devDependencies": {
+    "@vitejs/plugin-react": "^5.0.3",
     "electron": "^35.1.5",
-    "electron-builder": "^26.0.0",
+    "electron-builder": "^26.8.1",
     "electron-vite": "^4.0.1",
     "react": "^19.1.1",
-    "react-dom": "^19.1.1",
-    "@vitejs/plugin-react": "^5.0.3"
+    "react-dom": "^19.1.1"
   }
 }
