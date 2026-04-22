@@ -1,37 +1,32 @@
 # Recorder
 
-Screen + input recorder for observing knowledge worker workflows. Records coalesced user actions (clicks, typing, scrolling, hotkeys, drags) with screenshots and video. Output is a zip file on your Desktop ready for analysis.
+Screen + input recorder for observing knowledge worker workflows. Records coalesced user actions (clicks, typing, scrolling, hotkeys, drags) with screenshots and video. Output is a zip file on your Desktop.
 
 ## Install
 
-Download the latest DMG from [Releases](https://github.com/Emericen/recorder/releases), open it, drag to Applications.
+```bash
+curl -fsSL https://raw.githubusercontent.com/Emericen/recorder/main/install.sh | bash
+```
 
 ## Usage
 
-1. Open Recorder — no window, just a system tray icon
-2. Click tray icon → **Start Recording**
-3. Do your work
-4. Click tray icon → **Stop Recording**
-5. A `recording-<timestamp>.zip` appears on your Desktop
+```bash
+recorder        # start recording
+Ctrl+C          # stop — zip appears on Desktop
+```
 
-The zip contains:
+On first run, macOS will ask for **Screen Recording** and **Accessibility** permissions. Grant both and restart.
+
+## Output
+
+`recording-<timestamp>.zip` on your Desktop containing:
 - `actions.json` — raw action objects with base64 screenshots
-- `meta.json` — session metadata (start/end time, action count)
+- `meta.json` — session metadata
 - `recording.webm` — video of the session
 
 ## Development
 
 ```bash
 npm install
-npm run dev
+npm run dev     # Ctrl+C to stop
 ```
-
-Requires macOS accessibility permissions (prompted on first run).
-
-## Build
-
-```bash
-npm run package
-```
-
-Outputs a DMG in `dist/`.

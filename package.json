@@ -5,8 +5,7 @@
   "scripts": {
     "dev": "electron-vite dev",
     "build": "electron-vite build",
-    "package": "electron-vite build && electron-builder --mac --arm64 --x64",
-    "publish": "electron-vite build && electron-builder --mac --arm64 --x64 --publish always"
+    "package": "electron-vite build"
   },
   "dependencies": {
     "@electron-toolkit/preload": "^3.0.2",
