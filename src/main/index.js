@@ -1,7 +1,8 @@
-import { app, Tray, Menu, nativeImage, ipcMain } from "electron"
+import { app, Tray, Menu, nativeImage, ipcMain, dialog, desktopCapturer, systemPreferences } from "electron"
 import { createCaptureWindow } from "./windows/capture.js"
 import { createProcessor } from "./listener/processor.js"
 import { createSessionRecorder } from "./recorder.js"
+import { createRequire } from "module"
 
 app.dock?.hide()
 
@@ -11,6 +12,56 @@ let processor = null
 let sessionRecorder = null
 let captureScreenshot = null
 let stopRecording = null
+
+async function checkPermissions() {
+  const missing = []
+
+  // Check screen recording — try to get sources, if it fails or returns no usable sources, permission is missing
+  try {
+    const sources = await desktopCapturer.getSources({ types: ["screen"], thumbnailSize: { width: 1, height: 1 } })
+    const hasScreenPermission = sources.length > 0 && !sources[0].thumbnail.isEmpty()
+    if (!hasScreenPermission) missing.push("Screen Recording")
+  } catch {
+    missing.push("Screen Recording")
+  }
+
+  // Check accessibility (iohook needs this)
+  try {
+    const require = createRequire(import.meta.url)
+    const iohookModule = await import("iohook-macos")
+    const iohook = iohookModule.default || iohookModule
+    const result = iohook.checkAccessibilityPermissions()
+    if (!result.hasPermissions) missing.push("Accessibility")
+  } catch {
+    missing.push("Accessibility")
+  }
+
+  return missing
+}
+
+async function promptPermissions(missing) {
+  const list = missing.join(" and ")
+  const { response } = await dialog.showMessageBox({
+    type: "warning",
+    title: "Permissions Required",
+    message: `Recorder needs ${list} permissions to work.`,
+    detail: `Go to System Settings → Privacy & Security → ${missing[0]}, and enable Recorder. Then restart the app.`,
+    buttons: ["Open System Settings", "Quit"],
+    defaultId: 0
+  })
+
+  if (response === 0) {
+    // Open the relevant settings pane
+    const { shell } = await import("electron")
+    if (missing.includes("Screen Recording")) {
+      shell.openExternal("x-apple.systempreferences:com.apple.preference.security?Privacy_ScreenCapture")
+    } else if (missing.includes("Accessibility")) {
+      shell.openExternal("x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility")
+    }
+  }
+
+  app.quit()
+}
 
 function updateTrayMenu() {
   if (!tray) return
@@ -32,17 +83,14 @@ async function start() {
   recording = true
   updateTrayMenu()
 
-  console.log("🔴 Recording started")
+  console.log("Recording started")
 
-  // Create capture window for screenshots
   const capture = await createCaptureWindow()
   captureScreenshot = capture.captureScreenshot
   stopRecording = capture.stopRecording
 
-  // Create session recorder
   sessionRecorder = createSessionRecorder()
 
-  // Create input processor with coalescing
   processor = await createProcessor({
     captureScreenshot,
     onAction: (action) => {
@@ -56,30 +104,36 @@ async function stop() {
   recording = false
   updateTrayMenu()
 
-  console.log("⏹ Recording stopped")
+  console.log("Recording stopped")
 
   let videoBuffer = null
   try {
     if (stopRecording) videoBuffer = await stopRecording()
   } catch {}
 
-  // Save session
   if (sessionRecorder && sessionRecorder.length > 0) {
     const path = await sessionRecorder.save(videoBuffer)
-    console.log(`✅ Saved: ${path}`)
-  } else {
-    console.log("⚠️  No actions recorded")
+    console.log(`Saved: ${path}`)
   }
 
-  // Reset
   processor = null
   sessionRecorder = null
   captureScreenshot = null
   stopRecording = null
 }
 
-app.whenReady().then(() => {
-  // White square tray icon (same as OpenMNK)
+app.whenReady().then(async () => {
+  // Check permissions before anything else
+  if (process.platform === "darwin") {
+    const missing = await checkPermissions()
+    if (missing.length > 0) {
+      app.dock?.show() // show dock briefly so dialog is visible
+      await promptPermissions(missing)
+      return
+    }
+  }
+
+  // White square tray icon
   const size = 32
   const rgba = Buffer.alloc(size * size * 4)
   for (let i = 0; i < size * size; i++) {
@@ -96,7 +150,6 @@ app.whenReady().then(() => {
   tray = new Tray(icon)
   updateTrayMenu()
 
-  // Handle "Stop Sharing" from macOS system bar
   ipcMain.on("vision", (_event, message) => {
     if (message.type === "sharing-stopped" && recording) {
       console.log("Screen sharing stopped by user, saving...")
@@ -106,7 +159,7 @@ app.whenReady().then(() => {
 })
 
 app.on("window-all-closed", (e) => {
-  e.preventDefault() // keep running with just tray
+  e.preventDefault()
 })
 
 app.on("before-quit", async (e) => {
