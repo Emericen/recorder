@@ -39,28 +39,24 @@ npm install
 
 # Create launcher
 mkdir -p "$HOME/.local/bin"
-cat > "$HOME/.local/bin/recorder" << 'LAUNCHER'
+cat > "$HOME/.local/bin/record" << 'LAUNCHER'
 #!/bin/bash
 export PATH="$HOME/.local/node/bin:$HOME/.local/bin:$PATH"
 cd "$HOME/.recorder"
 npx electron-vite dev -- "$@" 2>/dev/null
 LAUNCHER
-chmod +x "$HOME/.local/bin/recorder"
+chmod +x "$HOME/.local/bin/record"
 
 # Add to PATH
 if ! grep -q '.local/bin' "$HOME/.zshrc" 2>/dev/null; then
   echo 'export PATH="$HOME/.local/bin:$PATH"' >> "$HOME/.zshrc"
 fi
-export PATH="$HOME/.local/bin:$PATH"
-
-# Setup permissions
-echo ""
-"$HOME/.local/bin/recorder" --setup
 
 echo ""
-echo "✅ Installed!"
+echo "✅ Installed! Open a new terminal, then:"
 echo ""
-echo "Open a new terminal, then run:"
-echo "  recorder          # start recording"
-echo "  Ctrl+C            # stop, saves zip to Desktop"
+echo "  record --grant-screen       # grant screen recording permission"
+echo "  record --grant-access       # grant accessibility permission"
+echo "  record                      # start recording"
+echo "  Ctrl+C                      # stop, saves zip to Desktop"
 echo ""

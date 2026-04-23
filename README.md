@@ -10,10 +10,22 @@ curl -fsSL https://raw.githubusercontent.com/Emericen/recorder/main/install.sh |
 
 Open a new terminal after install.
 
+## Setup (first time)
+
+```bash
+record --grant-screen
+```
+
+```bash
+record --grant-access
+```
+
+Grant each permission when macOS prompts you.
+
 ## Usage
 
 ```bash
-recorder
+record
 ```
 
 ```

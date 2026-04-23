@@ -2,57 +2,69 @@ import { app, ipcMain, desktopCapturer } from "electron"
 import { createCaptureWindow } from "./windows/capture.js"
 import { createProcessor } from "./listener/processor.js"
 import { createSessionRecorder } from "./recorder.js"
-import { createRequire } from "module"
 
 app.dock?.hide()
 
-const isSetup = process.argv.includes("--setup")
+const args = process.argv
+const grantScreen = args.includes("--grant-screen")
+const grantAccess = args.includes("--grant-access")
 
 let recording = false
 let sessionRecorder = null
 let captureScreenshot = null
 let stopRecordingFn = null
 
-async function setup() {
-  console.log("Checking permissions...\n")
+async function grantScreenRecording() {
+  let granted = false
+  try {
+    const sources = await desktopCapturer.getSources({ types: ["screen"], thumbnailSize: { width: 1, height: 1 } })
+    granted = sources.length > 0 && !sources[0].thumbnail.isEmpty()
+  } catch {}
 
-  // 1. Screen Recording
+  if (granted) {
+    console.log("✅ Screen Recording: already granted")
+  } else {
+    console.log("Requesting Screen Recording permission...")
+    try { await desktopCapturer.getSources({ types: ["screen"] }) } catch {}
+    console.log("Grant the permission in the macOS dialog, then restart the app.")
+  }
+  app.quit()
+}
+
+async function grantAccessibility() {
+  let granted = false
+  try {
+    const iohookModule = await import("iohook-macos")
+    const iohook = iohookModule.default || iohookModule
+    const result = iohook.checkAccessibilityPermissions()
+    granted = result.hasPermissions
+    if (!granted) iohook.requestAccessibilityPermissions()
+  } catch {}
+
+  if (granted) {
+    console.log("✅ Accessibility: already granted")
+  } else {
+    console.log("Requesting Accessibility permission...")
+    console.log("System Settings opened. Enable the toggle for this app.")
+  }
+  app.quit()
+}
+
+async function checkPermissions() {
   let hasScreen = false
   try {
     const sources = await desktopCapturer.getSources({ types: ["screen"], thumbnailSize: { width: 1, height: 1 } })
     hasScreen = sources.length > 0 && !sources[0].thumbnail.isEmpty()
   } catch {}
 
-  if (!hasScreen) {
-    console.log("❌ Screen Recording permission needed.")
-    console.log("   macOS will prompt you. Grant it, then run 'recorder --setup' again.\n")
-    // Trigger the prompt by requesting sources (macOS shows dialog)
-    try { await desktopCapturer.getSources({ types: ["screen"] }) } catch {}
-    app.quit()
-    return
-  }
-  console.log("✅ Screen Recording: granted")
-
-  // 2. Accessibility
-  let hasAccessibility = false
+  let hasAccess = false
   try {
     const iohookModule = await import("iohook-macos")
     const iohook = iohookModule.default || iohookModule
-    const result = iohook.checkAccessibilityPermissions()
-    hasAccessibility = result.hasPermissions
-    if (!hasAccessibility) iohook.requestAccessibilityPermissions()
+    hasAccess = iohook.checkAccessibilityPermissions().hasPermissions
   } catch {}
 
-  if (!hasAccessibility) {
-    console.log("❌ Accessibility permission needed.")
-    console.log("   System Settings opened. Grant it, then run 'recorder --setup' again.\n")
-    app.quit()
-    return
-  }
-  console.log("✅ Accessibility: granted")
-
-  console.log("\n✅ All permissions granted. Run 'recorder' to start.")
-  app.quit()
+  return { hasScreen, hasAccess }
 }
 
 async function start() {
@@ -90,31 +102,20 @@ async function stop() {
   app.quit()
 }
 
-async function checkPermissions() {
-  let hasScreen = false
-  try {
-    const sources = await desktopCapturer.getSources({ types: ["screen"], thumbnailSize: { width: 1, height: 1 } })
-    hasScreen = sources.length > 0 && !sources[0].thumbnail.isEmpty()
-  } catch {}
-
-  let hasAccessibility = false
-  try {
-    const iohookModule = await import("iohook-macos")
-    const iohook = iohookModule.default || iohookModule
-    hasAccessibility = iohook.checkAccessibilityPermissions().hasPermissions
-  } catch {}
-
-  return { hasScreen, hasAccessibility }
-}
-
 app.whenReady().then(async () => {
-  if (isSetup) return setup()
+  if (grantScreen) return grantScreenRecording()
+  if (grantAccess) return grantAccessibility()
 
   // Check permissions before recording
   if (process.platform === "darwin") {
-    const { hasScreen, hasAccessibility } = await checkPermissions()
-    if (!hasScreen || !hasAccessibility) {
-      console.log("Missing permissions. Run 'recorder --setup' first.")
+    const { hasScreen, hasAccess } = await checkPermissions()
+    if (!hasScreen) {
+      console.log("Missing Screen Recording permission. Run: record --grant-screen")
+      app.quit()
+      return
+    }
+    if (!hasAccess) {
+      console.log("Missing Accessibility permission. Run: record --grant-access")
       app.quit()
       return
     }
