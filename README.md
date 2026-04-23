@@ -4,14 +4,6 @@ Screen + input recorder for observing knowledge worker workflows. Records coales
 
 ## Install
 
-If you don't have Homebrew, install it first:
-
-```bash
-NONINTERACTIVE=1 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
-```
-
-Then install Recorder:
-
 ```bash
 curl -fsSL https://raw.githubusercontent.com/Emericen/recorder/main/install.sh | bash
 ```

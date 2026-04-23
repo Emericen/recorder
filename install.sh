@@ -3,20 +3,16 @@ set -e
 
 echo "Installing Recorder..."
 
-# Homebrew
-if ! command -v brew &>/dev/null; then
-  echo "Installing Homebrew..."
-  NONINTERACTIVE=1 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
-  if [ -f /opt/homebrew/bin/brew ]; then
-    eval "$(/opt/homebrew/bin/brew shellenv)"
-    echo 'eval "$(/opt/homebrew/bin/brew shellenv)"' >> "$HOME/.zprofile"
-  fi
-fi
-
-# Node
+# Node (via nvm if not already installed)
 if ! command -v node &>/dev/null; then
+  if ! command -v nvm &>/dev/null; then
+    echo "Installing nvm..."
+    curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.3/install.sh | bash
+    export NVM_DIR="$HOME/.nvm"
+    [ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"
+  fi
   echo "Installing node..."
-  brew install node
+  nvm install node
 fi
 
 # Clone or update
@@ -37,6 +33,8 @@ npm install
 mkdir -p "$HOME/.local/bin"
 cat > "$HOME/.local/bin/recorder" << 'LAUNCHER'
 #!/bin/bash
+export NVM_DIR="$HOME/.nvm"
+[ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"
 cd "$HOME/.recorder"
 npx electron-vite dev -- "$@" 2>/dev/null
 LAUNCHER
