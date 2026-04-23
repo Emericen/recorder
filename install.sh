@@ -49,6 +49,11 @@ LAUNCHER
 chmod +x /usr/local/bin/recorder
 
 echo ""
-echo "✅ Installed! Run 'recorder' to start, Ctrl+C to stop."
-echo "   Recording saves to your Desktop as a zip file."
+echo "✅ Installed! Setting up permissions..."
+echo ""
+recorder --setup
+
+echo ""
+echo "Run 'recorder' to start, Ctrl+C to stop."
+echo "Recording saves to your Desktop as a zip file."
 echo ""
