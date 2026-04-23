@@ -7,8 +7,9 @@
 curl -fsSL https://raw.githubusercontent.com/Emericen/recorder/main/install.sh | bash
 ```
 
-3. Wait for it to finish. You should see `✅ Installed! You may close this terminal and move to the next step.` Close the terminal and start a new one.
-4. In the new terminal, enter the following command and accept screen share permission request.
+1. Wait for it to finish. You will see `✅ Installed! ...` at the end.
+2. Close the terminal and start a new one.
+3. In the new terminal, enter the following command and accept screen share permission request.
 
 ```bash
 record --grant-screen
