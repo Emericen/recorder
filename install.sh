@@ -1,11 +1,16 @@
 #!/bin/bash
 set -e
 
-# Require homebrew
+echo "Installing Recorder..."
+
+# Homebrew
 if ! command -v brew &>/dev/null; then
-  echo "Homebrew is required. Install it first:"
-  echo '  /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"'
-  exit 1
+  echo "Installing Homebrew..."
+  NONINTERACTIVE=1 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+  if [ -f /opt/homebrew/bin/brew ]; then
+    eval "$(/opt/homebrew/bin/brew shellenv)"
+    echo 'eval "$(/opt/homebrew/bin/brew shellenv)"' >> "$HOME/.zprofile"
+  fi
 fi
 
 # Node
@@ -28,7 +33,7 @@ fi
 cd "$INSTALL_DIR"
 npm install
 
-# Create launcher in ~/.local/bin (no sudo needed)
+# Create launcher
 mkdir -p "$HOME/.local/bin"
 cat > "$HOME/.local/bin/recorder" << 'LAUNCHER'
 #!/bin/bash
@@ -37,19 +42,20 @@ npx electron-vite dev -- "$@" 2>/dev/null
 LAUNCHER
 chmod +x "$HOME/.local/bin/recorder"
 
-# Add to PATH if not already there
+# Add to PATH
 if [[ ":$PATH:" != *":$HOME/.local/bin:"* ]]; then
   echo 'export PATH="$HOME/.local/bin:$PATH"' >> "$HOME/.zshrc"
-  export PATH="$HOME/.local/bin:$PATH"
 fi
+export PATH="$HOME/.local/bin:$PATH"
 
 # Setup permissions
 echo ""
-recorder --setup
+"$HOME/.local/bin/recorder" --setup
 
 echo ""
-echo "✅ Installed! Run 'recorder' to start, Ctrl+C to stop."
-echo "   Recording saves to your Desktop as a zip file."
+echo "✅ Installed!"
 echo ""
-echo "   If 'recorder' is not found, run: source ~/.zshrc"
+echo "Open a new terminal, then run:"
+echo "  recorder          # start recording"
+echo "  Ctrl+C            # stop, saves zip to Desktop"
 echo ""
