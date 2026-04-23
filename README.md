@@ -1,42 +1,38 @@
-# Recorder
+# First Time Setup
 
-Screen + input recorder for observing knowledge worker workflows. Records coalesced user actions (clicks, typing, scrolling, hotkeys, drags) with screenshots and video. Output is a zip file on your Desktop.
-
-## Install
+1. Open a new terminal (`cmd + space` to open spotlight search and enter "Terminal")
+2. Enter the following command
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/Emericen/recorder/main/install.sh | bash
 ```
 
-Open a new terminal after install.
-
-## Setup (first time)
+3. Close the terminal and start a new one
+4. Enter the following command and accept screen share permission request
 
 ```bash
 record --grant-screen
 ```
 
+5. Enter the following command and accept accessibility permission request
+
 ```bash
 record --grant-access
 ```
 
-Grant each permission when macOS prompts you.
+# Start & Stop Recording
 
-## Usage
+In terminal, start by running
 
 ```bash
 record
 ```
 
-```
-Ctrl+C
-```
+You will see a screenshare icon on the top 
 
-Recording saves to your Desktop as a zip file.
+![screenshare icon](assets/screenshare-icon.png)
 
-## Development
+To stop, simply click on that icon and click `Stop Sharing`.
 
-```bash
-npm install
-npm run dev
-```
+Soon after stopping, there should be a zip file on your desktop.
+

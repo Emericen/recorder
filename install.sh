@@ -53,15 +53,9 @@ if ! grep -q '.local/bin' "$HOME/.zshrc" 2>/dev/null; then
 fi
 
 echo ""
-echo "✅ Installed! Terminal will restart now."
+echo "✅ Installed! Close this terminal and open a new one."
 echo ""
 echo "  record --grant-screen       # grant screen recording permission"
 echo "  record --grant-access       # grant accessibility permission"
 echo "  record                      # start recording"
-echo "  Ctrl+C                      # stop, saves zip to Desktop"
 echo ""
-
-# Restart terminal so PATH takes effect
-osascript -e 'tell application "Terminal" to do script "" in front window' &
-sleep 0.5
-osascript -e 'tell application "Terminal" to close (every window whose id is not (id of front window))' 2>/dev/null
