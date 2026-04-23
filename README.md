@@ -22,8 +22,6 @@ Ctrl+C
 
 Recording saves to your Desktop as a zip file.
 
-On first run, macOS will ask for **Screen Recording** and **Accessibility** permissions. Grant both and restart.
-
 ## Development
 
 ```bash
