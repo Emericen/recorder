@@ -77,14 +77,11 @@ export async function createCaptureWindow() {
     }
   }
 
-  const stopRecording = async () => {
-    const data = await requestFromRenderer(
-      "recording",
-      { type: "stop-capture" },
-      30000
-    )
-    return data ? Buffer.from(data) : null
+  const stopCapture = async () => {
+    try {
+      captureWindow?.webContents.send("vision", { type: "stop-capture" })
+    } catch {}
   }
 
-  return { window: captureWindow, captureScreenshot, stopRecording }
+  return { window: captureWindow, captureScreenshot, stopCapture }
 }

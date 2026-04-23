@@ -24,7 +24,6 @@ export class ScreenCapture {
     this.canvas = null
     this.canvasContext = null
     this.mediaRecorder = null
-    this.recordedChunks = []
   }
 
   /**
@@ -93,13 +92,18 @@ export class ScreenCapture {
         }
       })
 
-      // Also start WebM recording
-      this.recordedChunks = []
+      // Start WebM recording — stream chunks to main process in real time
       this.mediaRecorder = new MediaRecorder(this.stream, {
         mimeType: "video/webm"
       })
-      this.mediaRecorder.ondataavailable = (e) => {
-        if (e.data.size > 0) this.recordedChunks.push(e.data)
+      this.mediaRecorder.ondataavailable = async (e) => {
+        if (e.data.size > 0) {
+          const buffer = await e.data.arrayBuffer()
+          window.api.send("vision", {
+            type: "video-chunk",
+            data: Array.from(new Uint8Array(buffer))
+          })
+        }
       }
       this.mediaRecorder.start(1000)
 
@@ -113,35 +117,19 @@ export class ScreenCapture {
   }
 
   /**
-   * Stop capturing and recording, return video as ArrayBuffer
-   * @returns {Promise<ArrayBuffer|null>}
+   * Stop capturing — video already streamed to disk via chunks
    */
   async stopCapture() {
-    if (!this.isCapturing) return null
+    if (!this.isCapturing) return
 
-    // Stop MediaRecorder and get video
-    let videoBuffer = null
     if (this.mediaRecorder && this.mediaRecorder.state !== "inactive") {
-      videoBuffer = await new Promise((resolve) => {
-        this.mediaRecorder.onstop = async () => {
-          const blob = new Blob(this.recordedChunks, { type: "video/webm" })
-          resolve(await blob.arrayBuffer())
-        }
-        this.mediaRecorder.stop()
-      })
-    } else if (this.recordedChunks.length > 0) {
-      // Stream died (e.g. "Stop Sharing") but we have chunks — save what we have
-      const blob = new Blob(this.recordedChunks, { type: "video/webm" })
-      videoBuffer = await blob.arrayBuffer()
+      this.mediaRecorder.stop()
     }
     this.mediaRecorder = null
-    this.recordedChunks = []
 
-    // Stop stream
     this.stream?.getTracks().forEach((track) => track.stop())
     this.stream = null
 
-    // Clean up video element
     if (this.videoElement) {
       this.videoElement.srcObject = null
       this.videoElement.remove()
@@ -151,7 +139,6 @@ export class ScreenCapture {
     this.canvas = null
     this.canvasContext = null
     this.isCapturing = false
-    console.log("✅ Screenshot capture + WebM recording stopped")
     return videoBuffer
   }
 

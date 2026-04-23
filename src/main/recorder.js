@@ -1,71 +1,74 @@
 /**
  * Session Recorder
  *
- * Records raw action objects. Saves actions.json + recording.webm zipped to ~/Desktop/
- * Formatting is done in post-processing (notebook), not here.
+ * Streams actions and video to a folder on Desktop in real time.
+ * Buffers the current coalescing action — only writes when finalized.
  */
 
-import { createWriteStream } from "fs"
+import { mkdirSync, appendFileSync, writeFileSync } from "fs"
 import { join } from "path"
 import { homedir } from "os"
-import archiver from "archiver"
 
 export function createSessionRecorder() {
-  const actions = []
-  const actionIndex = new Map()
+  const timestamp = new Date()
+    .toISOString()
+    .replace(/[:.]/g, "-")
+    .slice(0, -5)
+
+  const dir = join(homedir(), "Desktop", `recording-${timestamp}`)
+  mkdirSync(dir, { recursive: true })
+
+  const actionsPath = join(dir, "actions.jsonl")
+  const videoPath = join(dir, "recording.webm")
+  const metaPath = join(dir, "meta.json")
+
   const startTime = Date.now()
+  let actionCount = 0
+  let lastAction = null
+
+  writeFileSync(metaPath, JSON.stringify({
+    startTime: new Date(startTime).toISOString(),
+    status: "recording"
+  }, null, 2))
+
+  function flush() {
+    if (lastAction) {
+      actionCount++
+      appendFileSync(actionsPath, JSON.stringify(lastAction) + "\n")
+      lastAction = null
+    }
+  }
 
   return {
     record(action) {
-      const existingIdx = actionIndex.get(action.id)
-      if (existingIdx !== undefined) {
-        actions[existingIdx] = { ...action, recordedAt: Date.now() }
-      } else {
-        actionIndex.set(action.id, actions.length)
-        actions.push({ ...action, recordedAt: Date.now() })
+      // If same id as buffered action, it's a coalesce update — just replace buffer
+      if (lastAction && lastAction.id === action.id) {
+        lastAction = { ...action }
+        return
       }
+      // New action — flush previous, buffer this one
+      flush()
+      lastAction = { ...action }
+    },
+
+    appendVideo(chunk) {
+      appendFileSync(videoPath, chunk)
     },
 
     get length() {
-      return actions.length
+      return actionCount + (lastAction ? 1 : 0)
     },
 
-    async save(videoBuffer) {
-      const timestamp = new Date()
-        .toISOString()
-        .replace(/[:.]/g, "-")
-        .slice(0, -5)
-
-      const desktop = join(homedir(), "Desktop")
-      const zipPath = join(desktop, `recording-${timestamp}.zip`)
-
-      const meta = {
+    finalize() {
+      flush()
+      writeFileSync(metaPath, JSON.stringify({
         startTime: new Date(startTime).toISOString(),
         endTime: new Date().toISOString(),
-        actionCount: actions.length
-      }
-
-      await new Promise((resolve, reject) => {
-        const output = createWriteStream(zipPath)
-        const archive = archiver("zip", { zlib: { level: 9 } })
-        output.on("close", resolve)
-        archive.on("error", reject)
-        archive.pipe(output)
-
-        archive.append(JSON.stringify(actions, null, 2), {
-          name: "actions.json"
-        })
-        archive.append(JSON.stringify(meta, null, 2), { name: "meta.json" })
-
-        if (videoBuffer) {
-          archive.append(Buffer.from(videoBuffer), { name: "recording.webm" })
-        }
-
-        archive.finalize()
-      })
-
-      console.log(`Session saved to: ${zipPath}`)
-      return zipPath
+        actionCount,
+        status: "complete"
+      }, null, 2))
+      console.log(`Saved: ${dir}`)
+      return dir
     }
   }
 }

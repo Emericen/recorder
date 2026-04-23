@@ -53,9 +53,5 @@ if ! grep -q '.local/bin' "$HOME/.zshrc" 2>/dev/null; then
 fi
 
 echo ""
-echo "✅ Installed! Close this terminal and open a new one."
-echo ""
-echo "  record --grant-screen       # grant screen recording permission"
-echo "  record --grant-access       # grant accessibility permission"
-echo "  record                      # start recording"
+echo "✅ Installed! You may close this terminal and move to the next step."
 echo ""

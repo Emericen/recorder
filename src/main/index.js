@@ -12,7 +12,7 @@ const grantAccess = args.includes("--grant-access")
 let recording = false
 let sessionRecorder = null
 let captureScreenshot = null
-let stopRecordingFn = null
+let stopCaptureFn = null
 
 async function grantScreenRecording() {
   let granted = false
@@ -69,13 +69,12 @@ async function checkPermissions() {
 
 async function start() {
   recording = true
+  sessionRecorder = createSessionRecorder()
   console.log("Recording started. Press Ctrl+C to stop.")
 
   const capture = await createCaptureWindow()
   captureScreenshot = capture.captureScreenshot
-  stopRecordingFn = capture.stopRecording
-
-  sessionRecorder = createSessionRecorder()
+  stopCaptureFn = capture.stopCapture
 
   await createProcessor({
     captureScreenshot,
@@ -89,16 +88,17 @@ async function stop() {
   if (!recording) return
   recording = false
 
-  let videoBuffer = null
   try {
-    if (stopRecordingFn) videoBuffer = await stopRecordingFn()
+    if (stopCaptureFn) await stopCaptureFn()
   } catch {}
 
-  if (sessionRecorder && sessionRecorder.length > 0) {
-    const path = await sessionRecorder.save(videoBuffer)
-    console.log(`Saved: ${path}`)
+  if (sessionRecorder) {
+    sessionRecorder.finalize()
   }
 
+  sessionRecorder = null
+  captureScreenshot = null
+  stopCaptureFn = null
   app.quit()
 }
 
@@ -106,7 +106,6 @@ app.whenReady().then(async () => {
   if (grantScreen) return grantScreenRecording()
   if (grantAccess) return grantAccessibility()
 
-  // Check permissions before recording
   if (process.platform === "darwin") {
     const { hasScreen, hasAccess } = await checkPermissions()
     if (!hasScreen) {
@@ -121,7 +120,11 @@ app.whenReady().then(async () => {
     }
   }
 
+  // Handle video chunks from renderer — write to disk immediately
   ipcMain.on("vision", (_event, message) => {
+    if (message.type === "video-chunk" && sessionRecorder) {
+      sessionRecorder.appendVideo(Buffer.from(message.data))
+    }
     if (message.type === "sharing-stopped" && recording) stop()
   })
 
