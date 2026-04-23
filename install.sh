@@ -15,6 +15,14 @@ if ! command -v node &>/dev/null; then
   nvm install node
 fi
 
+# Xcode Command Line Tools (for git)
+if ! command -v git &>/dev/null; then
+  echo "Installing Xcode Command Line Tools..."
+  xcode-select --install 2>/dev/null
+  echo "Waiting for Xcode tools to finish installing..."
+  until command -v git &>/dev/null; do sleep 5; done
+fi
+
 # Clone or update
 INSTALL_DIR="$HOME/.recorder"
 if [ -d "$INSTALL_DIR" ]; then
