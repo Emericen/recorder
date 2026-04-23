@@ -28,12 +28,26 @@ fi
 cd "$INSTALL_DIR"
 npm install
 
+# Create launcher in ~/.local/bin (no sudo needed)
+mkdir -p "$HOME/.local/bin"
+cat > "$HOME/.local/bin/recorder" << 'LAUNCHER'
+#!/bin/bash
+cd "$HOME/.recorder"
+npx electron-vite dev -- "$@" 2>/dev/null
+LAUNCHER
+chmod +x "$HOME/.local/bin/recorder"
+
+# Add to PATH if not already there
+if [[ ":$PATH:" != *":$HOME/.local/bin:"* ]]; then
+  echo 'export PATH="$HOME/.local/bin:$PATH"' >> "$HOME/.zshrc"
+  export PATH="$HOME/.local/bin:$PATH"
+fi
+
 # Setup permissions
 echo ""
-npx electron-vite dev -- --setup 2>/dev/null
+recorder --setup
 
 echo ""
-echo "✅ Installed! To record:"
-echo "  cd ~/.recorder && npm run dev"
-echo "  Ctrl+C to stop. Recording saves to Desktop."
+echo "✅ Installed! Run 'recorder' to start, Ctrl+C to stop."
+echo "   Recording saves to your Desktop as a zip file."
 echo ""
