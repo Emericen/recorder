@@ -1,5 +1,3 @@
-![banner](assets/banner.png)
-
 # First Time Setup
 
 1. Open a new terminal (`cmd + space` to open spotlight search and enter "Terminal")
