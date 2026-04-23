@@ -15,23 +15,15 @@ if ! command -v node &>/dev/null; then
   nvm install node
 fi
 
-# Xcode Command Line Tools (for git)
-if ! command -v git &>/dev/null; then
-  echo "Installing Xcode Command Line Tools..."
-  xcode-select --install 2>/dev/null
-  echo "Waiting for Xcode tools to finish installing..."
-  until command -v git &>/dev/null; do sleep 5; done
-fi
-
-# Clone or update
+# Download repo (no git needed)
 INSTALL_DIR="$HOME/.recorder"
 if [ -d "$INSTALL_DIR" ]; then
   echo "Updating..."
-  cd "$INSTALL_DIR" && git pull
-else
-  echo "Cloning..."
-  git clone https://github.com/Emericen/recorder.git "$INSTALL_DIR"
+  rm -rf "$INSTALL_DIR"
 fi
+echo "Downloading..."
+curl -fsSL https://github.com/Emericen/recorder/archive/refs/heads/main.tar.gz | tar -xz -C "$HOME"
+mv "$HOME/recorder-main" "$INSTALL_DIR"
 
 # Install dependencies
 cd "$INSTALL_DIR"
