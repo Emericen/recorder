@@ -3,16 +3,24 @@ set -e
 
 echo "Installing Recorder..."
 
-# Node (via nvm if not already installed)
+# Node — download prebuilt binary directly if not installed
 if ! command -v node &>/dev/null; then
-  if ! command -v nvm &>/dev/null; then
-    echo "Installing nvm..."
-    curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.3/install.sh | bash
-    export NVM_DIR="$HOME/.nvm"
-    [ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"
-  fi
   echo "Installing node..."
-  nvm install node
+  ARCH=$(uname -m)
+  if [ "$ARCH" = "arm64" ]; then
+    NODE_ARCH="arm64"
+  else
+    NODE_ARCH="x64"
+  fi
+  NODE_VERSION="v22.15.0"
+  NODE_DIR="$HOME/.local/node"
+  mkdir -p "$NODE_DIR"
+  curl -fsSL "https://nodejs.org/dist/${NODE_VERSION}/node-${NODE_VERSION}-darwin-${NODE_ARCH}.tar.gz" | tar -xz --strip-components=1 -C "$NODE_DIR"
+  export PATH="$NODE_DIR/bin:$PATH"
+  if ! grep -q '.local/node/bin' "$HOME/.zshrc" 2>/dev/null; then
+    echo 'export PATH="$HOME/.local/node/bin:$PATH"' >> "$HOME/.zshrc"
+  fi
+  echo "Node $(node --version) installed"
 fi
 
 # Download repo (no git needed)
@@ -33,15 +41,14 @@ npm install
 mkdir -p "$HOME/.local/bin"
 cat > "$HOME/.local/bin/recorder" << 'LAUNCHER'
 #!/bin/bash
-export NVM_DIR="$HOME/.nvm"
-[ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"
+export PATH="$HOME/.local/node/bin:$HOME/.local/bin:$PATH"
 cd "$HOME/.recorder"
 npx electron-vite dev -- "$@" 2>/dev/null
 LAUNCHER
 chmod +x "$HOME/.local/bin/recorder"
 
 # Add to PATH
-if [[ ":$PATH:" != *":$HOME/.local/bin:"* ]]; then
+if ! grep -q '.local/bin' "$HOME/.zshrc" 2>/dev/null; then
   echo 'export PATH="$HOME/.local/bin:$PATH"' >> "$HOME/.zshrc"
 fi
 export PATH="$HOME/.local/bin:$PATH"
